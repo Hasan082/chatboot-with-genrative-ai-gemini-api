@@ -24,6 +24,7 @@
 
     <script>
         $(document).ready(function() {
+            // Handle form submission
             $('#chat-form').on('submit', function(event) {
                 event.preventDefault();
                 var user_input = $('#user_input').val();
@@ -32,16 +33,20 @@
                 // Append user's message to the chat
                 $('#chat-box').append('<div class="user-message">' + user_input + '</div>');
 
-                // Clear input field
+                // Clear the input field
                 $('#user_input').val('');
 
+                // Call the backend API to get AI's response
                 $.ajax({
                     url: '/generate',  // Your server endpoint
                     type: 'POST',
                     data: { user_input: user_input },
                     success: function(response) {
-                        // Append AI's response to the chat
-                        $('#chat-box').append('<div class="ai-message">' + response.response + '</div>');
+                        // Parse the AI's response text to HTML format
+                        var parsedResponse = parseTextToHTML(response.response);
+                        
+                        // Append AI's formatted response to the chat
+                        $('#chat-box').append('<div class="ai-message">' + parsedResponse + '</div>');
                         $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight); // Scroll to the bottom
                     },
                     error: function(error) {
@@ -49,8 +54,55 @@
                     }
                 });
             });
+
+            // Function to parse raw text into HTML tags (Markdown-like formatting)
+            function parseTextToHTML(text) {
+                var htmlContent = "";
+                var lines = text.split("\n");
+
+                lines.forEach(function(line) {
+                    // Check for headers
+                    if (line.startsWith("# ")) {
+                        htmlContent += `<h1>${line.substring(2)}</h1>`;
+                    } else if (line.startsWith("## ")) {
+                        htmlContent += `<h2>${line.substring(3)}</h2>`;
+                    } else if (line.startsWith("### ")) {
+                        htmlContent += `<h3>${line.substring(4)}</h3>`;
+                    }
+                    // Check for unordered list items (* or -)
+                    else if (line.startsWith("** ") || line.startsWith("- ")) {
+                        if (!htmlContent.endsWith("<ul>")) {
+                            htmlContent += "<ul>";
+                        }
+                        htmlContent += `<li>${line.substring(2)}</li>`;
+                    }
+                    // Check for ordered list items (1., 2., etc.)
+                    else if (/^\d+\./.test(line)) {
+                        if (!htmlContent.endsWith("<ol>")) {
+                            htmlContent += "<ol>";
+                        }
+                        htmlContent += `<li>${line.substring(3)}</li>`;
+                    }
+                    // Regular paragraph text
+                    else {
+                        // Handling bold and italic
+                        line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"); // Bold (using **)
+                        htmlContent += `<p>${line}</p>`;
+                    }
+                });
+
+                // Close the list tags if they were opened
+                if (htmlContent.includes("<ul>") && !htmlContent.endsWith("</ul>")) {
+                    htmlContent += "</ul>";
+                }
+                if (htmlContent.includes("<ol>") && !htmlContent.endsWith("</ol>")) {
+                    htmlContent += "</ol>";
+                }
+
+                return htmlContent;
+            }
         });
     </script>
-    </script>
+
 </body>
 </html>
