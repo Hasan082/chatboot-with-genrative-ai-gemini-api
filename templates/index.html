@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generative AI Chatbot</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+    <div id="chat-container">
+        <h1 style="text-align: center;">Chat with Generative AI</h1>
+
+        <div id="chat-box">
+            <p id="ai-response">Waiting for input...</p>
+        </div>
+
+        <form id="chat-form">
+            <input type="text" id="user_input" name="user_input" placeholder="Ask me something..." />
+            <button type="submit" id="chat-submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#chat-form').on('submit', function(event) {
+                event.preventDefault();
+                var user_input = $('#user_input').val();
+                if (user_input.trim() === "") return;
+
+                // Append user's message to the chat
+                $('#chat-box').append('<div class="user-message">' + user_input + '</div>');
+
+                // Clear input field
+                $('#user_input').val('');
+
+                $.ajax({
+                    url: '/generate',  // Your server endpoint
+                    type: 'POST',
+                    data: { user_input: user_input },
+                    success: function(response) {
+                        // Append AI's response to the chat
+                        $('#chat-box').append('<div class="ai-message">' + response.response + '</div>');
+                        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight); // Scroll to the bottom
+                    },
+                    error: function(error) {
+                        $('#ai-response').text("Error: " + error);
+                    }
+                });
+            });
+        });
+    </script>
+    </script>
+</body>
+</html>
